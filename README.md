@@ -37,4 +37,4 @@ Data samples correspond to the concatenated one-hot encoded group elements. Diff
 + Multiplicative operations (`x*y`, `x/y`): Tuple form `(a,b)` -> Shifted tuple form `(a-1, b-1)` (since 0 is not a valid element) -> One-hot form `e_(a-1) || e_(b-1)`
 + Abelian groups: Tuple form `((a₁, a₂, ...),(b₁, b₂, ...))` -> Mixed radix encoded form `(a,b)` -> One-hot form `e_a || e_b`
 
-For clarity and demonstration, preprocessing is handled per function rather than in a unified pipeline (a production-oriented version could unify preprocessing into a single pipeline for greater modularity). Differen functions operate on different data representations.
+For clarity and demonstration, preprocessing is handled per function rather than in a unified pipeline (a production-oriented version could unify preprocessing into a single pipeline for greater modularity). Different functions operate on different data representations.
