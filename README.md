@@ -16,7 +16,7 @@ pip install -r requirements.txt
 + `main.py` contains the CLI for running experiments
 + `experiments.ipynb` reproduces the main experiments from the paper.
 
-## Files Overview
+## Files overview
 
 The main files of this repository are:
 
