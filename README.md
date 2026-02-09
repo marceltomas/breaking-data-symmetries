@@ -1,6 +1,6 @@
 # Breaking Data Symmetry is Needed For Generalization in Feature Learning Kernels
 
-Code accompanying the paper ["Breaking Data Symmetry is Needed for Generalization in Feature Learning Kernels"]().
+Code accompanying the paper ["Breaking Data Symmetry is Needed for Generalization in Feature Learning Kernels"]() (to be archived soon).
 
 This repository is built on top of [nmallinar/rfm-grokking](https://github.com/nmallinar/rfm-grokking).
 
