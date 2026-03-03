@@ -182,51 +182,6 @@ def make_data_splits(inputs, labels, training_fraction):
 
     return inputs[train_idx], labels[train_idx], inputs[val_idx], labels[val_idx]
 
-
-def random_partition_generator(operation: str, p, training_fraction: float):
-    """
-    Generate one-hot encoded training and test data for a given modular operation or abelian group.
-    Supports operations in ALL_OPERATIONS or the special case "abelian" for abelian group addition.
-
-    Args:
-        operation (str): Operation ("x+y", "x*y", "abelian", etc.)
-        p (int or list[int]): Prime modulus (int) or list of group sizes for "abelian" case
-        training_fraction (float): Fraction of data to include in the training split
-
-    Returns:
-        X_tr (torch.Tensor): One-hot encoded training inputs of shape (n_train, 2 * p)
-        y_tr (torch.Tensor): One-hot encoded training labels of shape (n_train, p)
-        X_te  (torch.Tensor): One-hot encoded test inputs of shape (n_test, 2 * p)
-        y_te  (torch.Tensor): One-hot encoded test labels of shape (n_test, p)
-    """
-    is_multiplicative = operation in MULTIPLICATIVE_MODULO_OPERATIONS
-
-    if operation == "abelian":
-        X, y = abelian_data(p)
-        X, y = encode_abelian(X, y, p)
-        total_size = math.prod(p)
-        
-    else:
-        X, y = operation_mod_p_data(operation, p) 
-        if operation in MULTIPLICATIVE_MODULO_OPERATIONS:
-            # Shift values down by 1 to make them 0-based
-            p -= 1
-            X = X - 1
-            y = y - 1
-            
-        total_size = p
-
-    X_tr, y_tr, X_te, y_te = make_data_splits(X, y, training_fraction)
-
-    # One-hot encode
-    X_tr = F.one_hot(X_tr, total_size).view(-1, 2 * total_size).double()
-    y_tr = F.one_hot(y_tr, total_size).double()
-    X_te = F.one_hot(X_te, total_size).view(-1, 2 * total_size).double()
-    y_te = F.one_hot(y_te, total_size).double()
-
-    return X_tr, y_tr, X_te, y_te
-
-
 def move_points_between_sets(X_tr, y_tr, X_te, y_te, n_test_to_train, n_train_to_test):
     """
     Moves random samples between test and train sets, preserving input-label pairing.
@@ -258,8 +213,8 @@ def partition_fixed_points(X, y, operation: str, p, reflections):
     Partitions dataset into fixed points and the rest, under one or more reflections sr^k.
 
     Args:
-        X (torch.Tensor): 
-            - Modular case: shape (n, 2), each row is (a, b)
+        X (torch.Tensor):
+            - Modular case: shape (n, 2), each row is (a, b) (additive: a and b ∈ [0, p-1], multiplicative: a and b ∈ [1, p-1])
             - Abelian case: shape (n, 2, d), each row is (a_tuple, b_tuple)
         y (torch.Tensor): 
             - Modular: shape (n,)
@@ -343,8 +298,12 @@ def move_reflected_pairs_to_test(X_tr, y_tr, X_te, y_te, operation, p, reflectio
     Moves reflected pairs under a single reflection sr^k from the training set to the test set.
 
     Args:
-        X_tr, y_tr: Training inputs and labels
-        X_te, y_te: Test inputs and labels
+        X_tr, X_te: Train and test inputs
+            - Modular case: shape (n, 2), each row is (a, b) (additive: a and b ∈ [0, p-1], multiplicative: a and b ∈ [1, p-1])
+            - Abelian case: shape (n, 2, d), each row is (a_tuple, b_tuple)
+        y_tr, y_te: Train and test labels
+            - Modular: shape (n,)
+            - Abelian: shape (n, d)
         operation (str): Operation ("x+y", "x*y", "abelian", etc.)
          p (int or list[int]): Prime modulus (int) or list of group sizes for "abelian" case
         reflections (int or list[int]): Single reflection index k or [k1, ..., kd] for abelian
@@ -476,6 +435,49 @@ def degenerate_data_generator(operation: str, p, reflections, n_test_to_train: i
     elif is_multiplicative:
         X_tr = X_tr - 1; y_tr = y_tr - 1
         X_te = X_te - 1; y_te = y_te - 1
+
+    # One-hot encode
+    X_tr = F.one_hot(X_tr, total_size).view(-1, 2 * total_size).double()
+    y_tr = F.one_hot(y_tr, total_size).double()
+    X_te = F.one_hot(X_te, total_size).view(-1, 2 * total_size).double()
+    y_te = F.one_hot(y_te, total_size).double()
+
+    return X_tr, y_tr, X_te, y_te
+
+def random_partition_generator(operation: str, p, training_fraction: float):
+    """
+    Generate one-hot encoded training and test data for a given modular operation or abelian group.
+    Supports operations in ALL_OPERATIONS or the special case "abelian" for abelian group addition.
+
+    Args:
+        operation (str): Operation ("x+y", "x*y", "abelian", etc.)
+        p (int or list[int]): Prime modulus (int) or list of group sizes for "abelian" case
+        training_fraction (float): Fraction of data to include in the training split
+
+    Returns:
+        X_tr (torch.Tensor): One-hot encoded training inputs of shape (n_train, 2 * p)
+        y_tr (torch.Tensor): One-hot encoded training labels of shape (n_train, p)
+        X_te  (torch.Tensor): One-hot encoded test inputs of shape (n_test, 2 * p)
+        y_te  (torch.Tensor): One-hot encoded test labels of shape (n_test, p)
+    """
+    is_multiplicative = operation in MULTIPLICATIVE_MODULO_OPERATIONS
+
+    if operation == "abelian":
+        X, y = abelian_data(p)
+        X, y = encode_abelian(X, y, p)
+        total_size = math.prod(p)
+        
+    else:
+        X, y = operation_mod_p_data(operation, p) 
+        if operation in MULTIPLICATIVE_MODULO_OPERATIONS:
+            # Shift values down by 1 to make them 0-based
+            p -= 1
+            X = X - 1
+            y = y - 1
+            
+        total_size = p
+
+    X_tr, y_tr, X_te, y_te = make_data_splits(X, y, training_fraction)
 
     # One-hot encode
     X_tr = F.one_hot(X_tr, total_size).view(-1, 2 * total_size).double()
